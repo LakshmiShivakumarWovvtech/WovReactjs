@@ -1,0 +1,63 @@
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>Indoor Mapping</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+    <!-- Load Leaflet (not latest version due to dependencies) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@0.7.7/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@0.7.7/dist/leaflet-src.js"></script>
+
+
+    <!-- Load Esri Leaflet (not latest version due to dependencies) -->
+    <script src="https://unpkg.com/esri-leaflet@1.0.4/dist/esri-leaflet.js"></script>
+
+
+  <style>
+    body { margin:0; padding:0; }
+    #map { position: absolute; top:0; bottom:0; right:0; left:0; }
+  </style>
+</head>
+<body>
+
+<!-- Include Leaflet Indoor package (https://github.com/cbaines/leaflet-indoor) -->
+<script src="https://rawgit.com/cbaines/leaflet-indoor/master/leaflet-indoor.js"></script>
+
+<div id="map"></div>
+
+<script>
+  var map = L.map('map').setView([28.470, -82.444], 18);
+
+  L.esri.basemapLayer('Streets').addTo(map);
+  var featureLayer = L.esri.featureLayer({
+    url: 'https://www25.swfwmd.state.fl.us/arcgis/rest/services/Internal/FacilitiesSearch/MapServer/0'
+  });
+
+  // Run a query against our Feature Layer (that we have not added to the map) 
+  // to get a FeatureCollection (https://tools.ietf.org/html/rfc7946#section-3.3)
+  featureLayer.query().run(function(error, featureCollection) {
+    indoorLayer = new L.Indoor(featureCollection, {
+      getLevel: function(feature) {
+        return feature.properties.FLOOR;
+      }
+    });
+    // set the initial level to show
+    indoorLayer.setLevel("4");
+    indoorLayer.addTo(map);
+
+    // Add Level Control (code from https://github.com/cbaines/leaflet-indoor)
+    var levelControl = new L.Control.Level({
+        level: "4",
+        levels: indoorLayer.getLevels()
+    });
+
+    // Connect the level control to the indoor layer
+    levelControl.addEventListener("levelchange", indoorLayer.setLevel, indoorLayer);
+
+    levelControl.addTo(map);
+  });
+
+</script>
+
+</body>
+</html>
